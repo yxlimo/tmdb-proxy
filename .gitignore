@@ -39,3 +39,7 @@ package-lock.json
 yarn.lock
 .env
 .env.local
+
+### 本地私有内容（不随仓库分发）###
+scripts/
+docs/

@@ -1,9 +1,12 @@
 {
+    "$schema": "https://openapi.vercel.sh/vercel.json",
     "version": 2,
+    "regions": ["iad1"],
+    "trailingSlash": false,
     "redirects": [
         {
             "source": "/",
-            "destination": "https://github.com/imaliang/tmdb-proxy",
+            "destination": "https://github.com/yxlimo/tmdb-proxy",
             "permanent": true
         }
     ],
@@ -11,6 +14,10 @@
         {
             "source": "/t/p/:path*",
             "destination": "https://image.tmdb.org/t/p/:path*"
+        },
+        {
+            "source": "/t/:type/:path*",
+            "destination": "https://image.tmdb.org/t/:type/:path*"
         },
         {
             "source": "/:path*",
