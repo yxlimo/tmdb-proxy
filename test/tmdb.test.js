@@ -179,7 +179,7 @@ test('根路径返回服务说明而非透传到上游', async () => {
     assert.equal(res.status, 200);
     const data = JSON.parse(res.body);
     assert.equal(data.service, 'tmdb-proxy');
-    assert.ok(data.endpoints.docker);
+    assert.ok(data.endpoints.health);
 });
 
 test('OPTIONS 预检直接放行', async () => {

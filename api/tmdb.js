@@ -147,9 +147,7 @@ module.exports = async (req, res) => {
             endpoints: {
                 api: '/{3|4}/...',
                 image: '/t/{w|o|l|r|p}/{size}{poster_path}',
-                docker: '/v2/...',
-                health: '/health',
-                dockerHealth: '/docker-health'
+                health: '/health'
             }
         }));
         return;

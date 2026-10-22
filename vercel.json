@@ -13,18 +13,6 @@
             "destination": "https://image.tmdb.org/t/:type/:path*"
         },
         {
-            "source": "/v2",
-            "destination": "/api/docker.js"
-        },
-        {
-            "source": "/v2/:path*",
-            "destination": "/api/docker.js"
-        },
-        {
-            "source": "/docker-health",
-            "destination": "/api/docker.js"
-        },
-        {
             "source": "/:path*",
             "destination": "/api/tmdb.js"
         }
