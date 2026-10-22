@@ -1,6 +1,7 @@
 ## tmdb-proxy
 
-用 Vercel 代理 TMDB 接口。免费额度每月 100GB 流量，自用完全够用。
+用 Vercel 代理 TMDB 接口与 Docker Hub 镜像仓库。免费额度每月 100GB 流量，
+自用完全够用。
 
 支持错误原样透传、多方法转发、缓存隔离与分级、服务端凭据注入、
 上游超时处理、健康检查、尾斜杠处理，并有单元测试覆盖。
@@ -11,14 +12,15 @@
 | --- | --- |
 | 接口代理 | `/{3\|4}/...` 透传到 `api.themoviedb.org`，路径与查询参数原样转发 |
 | 图片代理 | `/t/p/...`、`/t/{w\|o\|l\|r}/...` 转发到 `image.tmdb.org` |
+| Docker 代理 | `/v2/...` 实现 Registry v2 协议，客户端无需 `docker login` |
 | 错误原样透传 | 上游状态码和响应体不包装，TMDB 的 `status_code` / `status_message` 保持原样，Emby / Jellyfin / TMDbHelper 可直接解析 |
 | 多方法支持 | GET / HEAD / POST / PUT / PATCH / DELETE 按原方法转发，`POST /4/auth/token`、`DELETE /4/auth/session` 等 v4 鉴权接口可用 |
 | 分层缓存 | Vercel 共享 CDN 缓存 + 进程内缓存，TTL 按数据类别分级（配置 24h / 剧集 12h / 榜单 1h / 趋势 15min），不跟随上游 |
 | 缓存隔离 | 缓存键含凭据指纹，不同用户的私有数据不会互相串 |
 | 服务端凭据 | 可配置 `TMDB_API_KEY` / `TMDB_BEARER_TOKEN`，客户端无需再带 key |
 | CORS | 允许跨域，`OPTIONS` 预检直接放行 |
-| 健康检查 | `/health` 返回服务状态、缓存条目数与地理信息 |
-| 根路径 | 308 跳转到本仓库页面 |
+| 健康检查 | `/health` 返回 TMDB 服务状态，`/docker-health` 返回 Docker 代理状态 |
+| 根路径 | 返回服务说明 |
 
 ## 部署
 
@@ -33,8 +35,17 @@
    | --- | --- |
    | `TMDB_API_KEY` | 服务端 v3 api key，配置后客户端无需再带 key |
    | `TMDB_BEARER_TOKEN` | 服务端 v4 read access token，优先级更高 |
+   | `DOCKERHUB_USERNAME` | Docker Hub 用户名 |
+   | `DOCKERHUB_TOKEN` | Docker Hub personal access token（只读权限即可） |
 
    配好后客户端（含 Emby / Jellyfin 的 TMDB 提供器）只填代理域名即可。
+
+   Docker Hub 凭据用于服务端换取令牌：客户端无需 `docker login`，
+   且拉取配额按账号计（200 次/6 小时）而非按出口 IP 计（100 次/6 小时，
+   共享 IP 的配额会被其他租户消耗）。
+
+4. 配置访问控制。**代理不做鉴权**，公开暴露前请在 Vercel WAF 里加 IP 白名单
+   —— 配了 Docker Hub 凭据后，代理也能访问该账号的私有仓库。
 
 推送到 `master` 会触发 Vercel 重新部署。
 
@@ -57,6 +68,15 @@
 | `TMDB_TTL_TRENDING` | `900` | 趋势榜的共享缓存 TTL（秒） |
 | `TMDB_TTL_SEARCH` | `900` | 搜索结果的共享缓存 TTL（秒） |
 | `TMDB_TTL_DEFAULT` | `3600` | 其余 v3 接口的共享缓存 TTL（秒） |
+| `DOCKERHUB_USERNAME` | 空 | Docker Hub 用户名 |
+| `DOCKERHUB_TOKEN` | 空 | Docker Hub personal access token |
+| `DOCKER_REGISTRY_BASE` | `https://registry-1.docker.io` | Docker registry 上游 |
+| `DOCKER_AUTH_BASE` | `https://auth.docker.io` | Docker auth 上游 |
+| `DOCKER_BLOB_MODE` | `redirect` | blob 处理方式：`redirect` 交客户端直连 CDN，`proxy` 由代理流式转发 |
+| `DOCKER_TIMEOUT_MS` | `15000` | 上游请求超时 |
+| `DOCKER_CACHE_MAX_SIZE` | `500` | 进程内 manifest 缓存条目上限 |
+| `DOCKER_MANIFEST_TTL_DIGEST_MS` | `86400000` | digest 引用缓存时长（24 小时） |
+| `DOCKER_MANIFEST_TTL_TAG_MS` | `300000` | tag 引用缓存时长（5 分钟） |
 
 ## 使用方法
 
@@ -84,7 +104,26 @@
 
    ```bash
    curl "https://<你的域名>/health"
+   curl "https://<你的域名>/docker-health"
    ```
+
+5. **Docker 镜像**——把代理地址配成镜像源：
+
+   ```json
+   // /etc/docker/daemon.json
+   {
+     "registry-mirrors": ["https://<你的域名>"]
+   }
+   ```
+
+   ```toml
+   # /etc/containers/registries.conf
+   [[registry.mirror]]
+   location = "<你的域名>"
+   ```
+
+   然后 `docker pull docker.io/library/alpine:3.19` 即可，
+   客户端无需 `docker login`。
 
 ## 注意事项
 

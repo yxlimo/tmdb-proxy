@@ -138,6 +138,23 @@ module.exports = async (req, res) => {
     }
     const pathname = parsed.pathname;
 
+    // 根路径：返回服务说明，避免直接透传到上游得到难懂的错误
+    if (pathname === '/' || pathname === '') {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.statusCode = 200;
+        res.end(JSON.stringify({
+            service: 'tmdb-proxy',
+            endpoints: {
+                api: '/{3|4}/...',
+                image: '/t/{w|o|l|r|p}/{size}{poster_path}',
+                docker: '/v2/...',
+                health: '/health',
+                dockerHealth: '/docker-health'
+            }
+        }));
+        return;
+    }
+
     // 健康检查
     if (pathname === '/health') {
         res.setHeader('Content-Type', 'application/json; charset=utf-8');

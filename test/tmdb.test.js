@@ -174,6 +174,14 @@ test('/health 返回健康状态', async () => {
     assert.equal(data.upstream, upstreamBase);
 });
 
+test('根路径返回服务说明而非透传到上游', async () => {
+    const res = await invoke({ url: '/' });
+    assert.equal(res.status, 200);
+    const data = JSON.parse(res.body);
+    assert.equal(data.service, 'tmdb-proxy');
+    assert.ok(data.endpoints.docker);
+});
+
 test('OPTIONS 预检直接放行', async () => {
     const res = await invoke({ method: 'OPTIONS', url: '/3/movie/550' });
     assert.equal(res.status, 200);

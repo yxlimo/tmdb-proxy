@@ -3,13 +3,6 @@
     "version": 2,
     "regions": ["iad1"],
     "trailingSlash": false,
-    "redirects": [
-        {
-            "source": "/",
-            "destination": "https://github.com/yxlimo/tmdb-proxy",
-            "permanent": true
-        }
-    ],
     "rewrites": [
         {
             "source": "/t/p/:path*",
@@ -18,6 +11,18 @@
         {
             "source": "/t/:type/:path*",
             "destination": "https://image.tmdb.org/t/:type/:path*"
+        },
+        {
+            "source": "/v2",
+            "destination": "/api/docker.js"
+        },
+        {
+            "source": "/v2/:path*",
+            "destination": "/api/docker.js"
+        },
+        {
+            "source": "/docker-health",
+            "destination": "/api/docker.js"
         },
         {
             "source": "/:path*",
